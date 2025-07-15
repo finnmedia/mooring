@@ -1,0 +1,4692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mooring Ireland & UK - Complete Maritime Navigation Platform</title>
+    <meta name="description" content="Comprehensive maritime navigation platform featuring 235+ mooring locations across Ireland, UK, and British Isles with interactive map and detailed facility information.">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom Styles -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            padding: 1rem 2rem;
+            border-bottom: 2px solid #0ea5e9;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1000;
+        }
+        
+        .header h1 {
+            color: #0ea5e9;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        
+        .main-container {
+            display: flex;
+            height: calc(100vh - 100px);
+        }
+        
+        .sidebar {
+            width: 350px;
+            background: #1e293b;
+            border-right: 2px solid #334155;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        .filters {
+            margin-bottom: 1.5rem;
+        }
+        
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+        
+        .filter-group label {
+            display: block;
+            color: #0ea5e9;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .filter-group select {
+            width: 100%;
+            padding: 0.75rem;
+            background: #334155;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+        }
+        
+        .locations-list {
+            max-height: calc(100vh - 400px);
+            overflow-y: auto;
+        }
+        
+        .location-card {
+            background: #334155;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .location-card:hover {
+            background: #475569;
+            border-color: #0ea5e9;
+            transform: translateY(-1px);
+        }
+        
+        .location-card.selected {
+            background: #1e40af;
+            border-color: #3b82f6;
+        }
+        
+        .location-name {
+            color: #0ea5e9;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .location-details {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        
+        .location-berths {
+            color: #22d3ee;
+            font-weight: 500;
+        }
+        
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .location-popup {
+            font-family: inherit;
+            max-width: 300px;
+        }
+        
+        .popup-name {
+            color: #0ea5e9;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .popup-details {
+            color: #374151;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+        }
+        
+        .popup-facilities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+        }
+        
+        .facility-tag {
+            background: #0ea5e9;
+            color: white;
+            padding: 0.125rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .contact-info {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .contact-link {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stats {
+            background: #334155;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .stats-number {
+            color: #0ea5e9;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .stats-label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 40%;
+                border-right: none;
+                border-bottom: 2px solid #334155;
+            }
+            
+            .map-container {
+                height: 60%;
+            }
+            
+            .header {
+                padding: 0.75rem 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚢 Mooring Ireland & UK</h1>
+        <p>Complete Maritime Navigation Platform • 235+ Locations Across British Isles</p>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="stats">
+                <div class="stats-number">235</div>
+                <div class="stats-label">Maritime Locations</div>
+            </div>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="countryFilter">Country</label>
+                    <select id="countryFilter">
+                        <option value="">All Countries</option>
+                        <option value="Ireland">Ireland</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="Scotland">Scotland</option>
+                        <option value="England">England</option>
+                        <option value="Wales">Wales</option>
+                        <option value="Northern Ireland">Northern Ireland</option>
+                        <option value="Isle of Man">Isle of Man</option>
+                        <option value="Channel Islands">Channel Islands</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="typeFilter">Location Type</label>
+                    <select id="typeFilter">
+                        <option value="">All Types</option>
+                        <option value="marina">Marina</option>
+                        <option value="harbour">Harbour</option>
+                        <option value="pier">Pier</option>
+                        <option value="jetty">Jetty</option>
+                        <option value="port">Port</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="locations-list" id="locationsList">
+                <!-- Locations will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Maritime locations data
+        const locations = [
+  {
+    "name": "Dublin Port",
+    "address": "Port Centre, Dublin",
+    "county": "Dublin",
+    "region": "East Coast",
+    "country": "Ireland",
+    "latitude": 53.3498,
+    "longitude": -6.2465,
+    "type": "marina",
+    "berths": 40,
+    "maxDepth": 10,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Cork Port",
+    "address": "Custom House Street, Cork",
+    "county": "Cork",
+    "region": "South Coast",
+    "country": "Ireland",
+    "latitude": 51.8979,
+    "longitude": -8.4756,
+    "type": "marina",
+    "berths": 35,
+    "maxDepth": 8.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Shannon Foynes Port",
+    "address": "Foynes, Limerick",
+    "county": "Limerick",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 52.6103,
+    "longitude": -9.1089,
+    "type": "marina",
+    "berths": 25,
+    "maxDepth": 12,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Waterford Port",
+    "address": "Belview Port, Waterford",
+    "county": "Waterford",
+    "region": "Southeast",
+    "country": "Ireland",
+    "latitude": 52.2593,
+    "longitude": -6.9969,
+    "type": "marina",
+    "berths": 30,
+    "maxDepth": 9.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Rosslare Europort",
+    "address": "Rosslare Harbour, Wexford",
+    "county": "Wexford",
+    "region": "Southeast",
+    "country": "Ireland",
+    "latitude": 52.2517,
+    "longitude": -6.3384,
+    "type": "marina",
+    "berths": 40,
+    "maxDepth": 8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Dún Laoghaire Marina",
+    "address": "Harbour Road, Dún Laoghaire",
+    "county": "Dublin",
+    "region": "East Coast",
+    "country": "Ireland",
+    "latitude": 53.2939,
+    "longitude": -6.1347,
+    "type": "marina",
+    "berths": 800,
+    "maxDepth": 4.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Bangor Marina",
+    "address": "Quay Street, Bangor",
+    "county": "Down",
+    "region": "North Coast",
+    "country": "Ireland",
+    "latitude": 54.665,
+    "longitude": -5.6697,
+    "type": "marina",
+    "berths": 500,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Carlingford Marina",
+    "address": "Carlingford Harbour, Louth",
+    "county": "Louth",
+    "region": "East Coast",
+    "country": "Ireland",
+    "latitude": 54.0393,
+    "longitude": -6.1864,
+    "type": "marina",
+    "berths": 300,
+    "maxDepth": 3.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Carrickfergus Marina",
+    "address": "Marine Highway, Carrickfergus",
+    "county": "Antrim",
+    "region": "North Coast",
+    "country": "Ireland",
+    "latitude": 54.7156,
+    "longitude": -5.8058,
+    "type": "marina",
+    "berths": 280,
+    "maxDepth": 4.2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Kinsale Marina",
+    "address": "Trident Hotel, Kinsale",
+    "county": "Cork",
+    "region": "South Coast",
+    "country": "Ireland",
+    "latitude": 51.7058,
+    "longitude": -8.5303,
+    "type": "marina",
+    "berths": 270,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Lough Swilly Marina",
+    "address": "Fahan, Donegal, F93 W864",
+    "county": "Donegal",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 55.087864,
+    "longitude": -7.481936,
+    "type": "marina",
+    "berths": 200,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Royal Cork Yacht Club Marina",
+    "address": "Crosshaven, Cork",
+    "county": "Cork",
+    "region": "South Coast",
+    "country": "Ireland",
+    "latitude": 51.7917,
+    "longitude": -8.2944,
+    "type": "marina",
+    "berths": 200,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Castlepark Marina",
+    "address": "Castlepark, Kinsale",
+    "county": "Cork",
+    "region": "South Coast",
+    "country": "Ireland",
+    "latitude": 51.7067,
+    "longitude": -8.5289,
+    "type": "marina",
+    "berths": 150,
+    "maxDepth": 3.2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Fenit Marina",
+    "address": "Fenit Harbour, Kerry",
+    "county": "Kerry",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 52.2742,
+    "longitude": -9.8653,
+    "type": "marina",
+    "berths": 130,
+    "maxDepth": 3.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "East Ferry Marina",
+    "address": "East Ferry, Cork",
+    "county": "Cork",
+    "region": "South Coast",
+    "country": "Ireland",
+    "latitude": 51.8178,
+    "longitude": -8.2742,
+    "type": "marina",
+    "berths": 100,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Greystones Marina",
+    "address": "Greystones Harbour, Wicklow",
+    "county": "Wicklow",
+    "region": "East Coast",
+    "country": "Ireland",
+    "latitude": 53.1403,
+    "longitude": -6.0631,
+    "type": "marina",
+    "berths": 100,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Killybegs Harbour",
+    "address": "Harbour Road, Killybegs",
+    "county": "Donegal",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.6331,
+    "longitude": -8.45,
+    "type": "marina",
+    "berths": 80,
+    "maxDepth": 6,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Buncrana Pier",
+    "address": "Shore Front, Buncrana",
+    "county": "Donegal",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 55.12706,
+    "longitude": -7.466144,
+    "type": "pier",
+    "berths": 15,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Castletownbere Harbour",
+    "address": "Dinish Island, Castletownbere",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.6494,
+    "longitude": -9.9069,
+    "type": "marina",
+    "berths": 60,
+    "maxDepth": 8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ros-a-Mhíl Harbour",
+    "address": "Rossaveal, Galway",
+    "county": "Galway",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.2489,
+    "longitude": -9.5494,
+    "type": "marina",
+    "berths": 45,
+    "maxDepth": 4.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Dunmore East Harbour",
+    "address": "Harbour Road, Dunmore East",
+    "county": "Waterford",
+    "region": "Southeast",
+    "country": "Ireland",
+    "latitude": 52.1519,
+    "longitude": -6.9908,
+    "type": "marina",
+    "berths": 50,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Kilmore Quay Harbour",
+    "address": "Kilmore Quay, Wexford",
+    "county": "Wexford",
+    "region": "Southeast",
+    "country": "Ireland",
+    "latitude": 52.1731,
+    "longitude": -6.5858,
+    "type": "marina",
+    "berths": 35,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Aran Islands - Kilronan",
+    "address": "Kilronan, Inishmore",
+    "county": "Galway",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.1167,
+    "longitude": -9.7,
+    "type": "pier",
+    "berths": 20,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Inisheer Pier",
+    "address": "Inisheer Island, Aran Islands",
+    "county": "Galway",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.06808,
+    "longitude": -9.5259495,
+    "type": "pier",
+    "berths": 12,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Arranmore Island Harbour",
+    "address": "Leabgarrow, Arranmore",
+    "county": "Donegal",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 55.0092,
+    "longitude": -8.5208,
+    "type": "pier",
+    "berths": 15,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Clare Island Harbour",
+    "address": "Clare Island, Mayo",
+    "county": "Mayo",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.8064,
+    "longitude": -9.9364,
+    "type": "pier",
+    "berths": 18,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Scattery Island Pier",
+    "address": "Scattery Island, Clare",
+    "county": "Clare",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 52.6175,
+    "longitude": -9.5353,
+    "type": "pier",
+    "berths": 10,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Lawrence Cove Marina",
+    "address": "Bere Island, Cork",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.6519,
+    "longitude": -9.8475,
+    "type": "marina",
+    "berths": 50,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Dingle Marina",
+    "address": "Marina Road, Dingle",
+    "county": "Kerry",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 52.1404,
+    "longitude": -10.2725,
+    "type": "marina",
+    "berths": 80,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Cahersiveen Marina",
+    "address": "Cahersiveen Harbour, Kerry",
+    "county": "Kerry",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.9478,
+    "longitude": -10.2314,
+    "type": "marina",
+    "berths": 93,
+    "maxDepth": 3.2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Valentia Island Harbour",
+    "address": "Knightstown, Valentia Island",
+    "county": "Kerry",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.9311,
+    "longitude": -10.3703,
+    "type": "pier",
+    "berths": 25,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Kilrush Marina",
+    "address": "Kilrush Creek, Clare",
+    "county": "Clare",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 52.6367,
+    "longitude": -9.5097,
+    "type": "marina",
+    "berths": 170,
+    "maxDepth": 3.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Doolin Pier",
+    "address": "Doolin Harbour, Clare",
+    "county": "Clare",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.0147,
+    "longitude": -9.3781,
+    "type": "pier",
+    "berths": 12,
+    "maxDepth": 2.2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Galway Harbour",
+    "address": "New Docks, Galway",
+    "county": "Galway",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.2707,
+    "longitude": -9.0568,
+    "type": "marina",
+    "berths": 40,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Sligo Harbour",
+    "address": "Sligo Port, Sligo",
+    "county": "Sligo",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.2642,
+    "longitude": -8.4578,
+    "type": "marina",
+    "berths": 30,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Bantry Bay Harbour",
+    "address": "Bantry, Cork",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.6831,
+    "longitude": -9.4494,
+    "type": "marina",
+    "berths": 35,
+    "maxDepth": 15,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Youghal Harbour",
+    "address": "Youghal, Cork",
+    "county": "Cork",
+    "region": "South Coast",
+    "country": "Ireland",
+    "latitude": 51.9489,
+    "longitude": -7.8506,
+    "type": "pier",
+    "berths": 25,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Arklow Harbour",
+    "address": "South Quay, Arklow",
+    "county": "Wicklow",
+    "region": "East Coast",
+    "country": "Ireland",
+    "latitude": 52.7947,
+    "longitude": -6.1353,
+    "type": "marina",
+    "berths": 45,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Belfast Harbour",
+    "address": "Corporation Square, Belfast",
+    "county": "Antrim",
+    "region": "North Coast",
+    "country": "Ireland",
+    "latitude": 54.59639,
+    "longitude": -5.930556,
+    "type": "marina",
+    "berths": 50,
+    "maxDepth": 8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Portrush Harbour",
+    "address": "Harbour Road, Portrush",
+    "county": "Antrim",
+    "region": "North Coast",
+    "country": "Ireland",
+    "latitude": 55.2031,
+    "longitude": -6.6531,
+    "type": "marina",
+    "berths": 100,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Coleraine Marina",
+    "address": "The Jetty, Coleraine",
+    "county": "Londonderry",
+    "region": "North Coast",
+    "country": "Ireland",
+    "latitude": 55.1353,
+    "longitude": -6.6678,
+    "type": "marina",
+    "berths": 60,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Burtonport Harbour",
+    "address": "Burtonport, Donegal",
+    "county": "Donegal",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 55.0369,
+    "longitude": -8.4681,
+    "type": "pier",
+    "berths": 20,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Bunbeg Harbour",
+    "address": "Bunbeg, Donegal",
+    "county": "Donegal",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 55.0594,
+    "longitude": -8.3089,
+    "type": "pier",
+    "berths": 15,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Greencastle Harbour",
+    "address": "Greencastle, Donegal",
+    "county": "Donegal",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 55.2031,
+    "longitude": -7.0353,
+    "type": "marina",
+    "berths": 80,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Rathmullan Pier",
+    "address": "Rathmullan, Donegal",
+    "county": "Donegal",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 55.095024,
+    "longitude": -7.5324054,
+    "type": "pier",
+    "berths": 12,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Bundoran Harbour",
+    "address": "Bundoran, Donegal",
+    "county": "Donegal",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.4764,
+    "longitude": -8.2814,
+    "type": "pier",
+    "berths": 18,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Achill Island Harbour",
+    "address": "Keel, Achill Island",
+    "county": "Mayo",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.9719,
+    "longitude": -10.1653,
+    "type": "pier",
+    "berths": 20,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Inishbofin Harbour",
+    "address": "Inishbofin Island, Galway",
+    "county": "Galway",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.6142,
+    "longitude": -10.2047,
+    "type": "pier",
+    "berths": 15,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Inishturk Harbour",
+    "address": "Inishturk Island, Mayo",
+    "county": "Mayo",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.7081,
+    "longitude": -10.0953,
+    "type": "pier",
+    "berths": 8,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Sherkin Island Harbour",
+    "address": "Sherkin Island, Cork",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.4731,
+    "longitude": -9.4239,
+    "type": "pier",
+    "berths": 12,
+    "maxDepth": 2.2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Heir Island Harbour",
+    "address": "Heir Island, Cork",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.5153,
+    "longitude": -9.4414,
+    "type": "pier",
+    "berths": 6,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Whiddy Island Terminal",
+    "address": "Whiddy Island, Bantry Bay",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.7019,
+    "longitude": -9.5331,
+    "type": "pier",
+    "berths": 10,
+    "maxDepth": 20,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Long Island Harbour",
+    "address": "Long Island, Cork",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.5264,
+    "longitude": -9.6047,
+    "type": "pier",
+    "berths": 8,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Great Blasket Island Pier",
+    "address": "Great Blasket Island, Kerry",
+    "county": "Kerry",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 52.0994,
+    "longitude": -10.5333,
+    "type": "pier",
+    "berths": 5,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Portmagee Harbour",
+    "address": "Portmagee, Kerry",
+    "county": "Kerry",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.8886,
+    "longitude": -10.3825,
+    "type": "pier",
+    "berths": 20,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ballinskelligs Pier",
+    "address": "Ballinskelligs, Kerry",
+    "county": "Kerry",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.7719,
+    "longitude": -10.2669,
+    "type": "pier",
+    "berths": 12,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Kinvara Harbour",
+    "address": "Kinvara, Galway",
+    "county": "Galway",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.1358,
+    "longitude": -8.9358,
+    "type": "pier",
+    "berths": 18,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Clifden Harbour",
+    "address": "Clifden, Galway",
+    "county": "Galway",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.4889,
+    "longitude": -10.0203,
+    "type": "pier",
+    "berths": 15,
+    "maxDepth": 2.2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Roundstone Harbour",
+    "address": "Roundstone, Galway",
+    "county": "Galway",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.4053,
+    "longitude": -9.905,
+    "type": "pier",
+    "berths": 12,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Skerries Harbour",
+    "address": "Skerries, Dublin",
+    "county": "Dublin",
+    "region": "East Coast",
+    "country": "Ireland",
+    "latitude": 53.5819,
+    "longitude": -6.1083,
+    "type": "pier",
+    "berths": 25,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Clogherhead Harbour",
+    "address": "Clogherhead, Louth",
+    "county": "Louth",
+    "region": "East Coast",
+    "country": "Ireland",
+    "latitude": 53.7942,
+    "longitude": -6.2181,
+    "type": "pier",
+    "berths": 30,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Drogheda Port",
+    "address": "Tom Roe Point, Drogheda",
+    "county": "Louth",
+    "region": "East Coast",
+    "country": "Ireland",
+    "latitude": 53.7158,
+    "longitude": -6.3508,
+    "type": "marina",
+    "berths": 35,
+    "maxDepth": 6,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Dundalk Port",
+    "address": "Quay Street, Dundalk",
+    "county": "Louth",
+    "region": "East Coast",
+    "country": "Ireland",
+    "latitude": 54.0075,
+    "longitude": -6.4036,
+    "type": "marina",
+    "berths": 40,
+    "maxDepth": 5.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Carrick-on-Shannon Marina",
+    "address": "Carrick-on-Shannon, Leitrim",
+    "county": "Leitrim",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.9494,
+    "longitude": -8.0889,
+    "type": "marina",
+    "berths": 120,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Athlone Marina",
+    "address": "Burgess Park, Athlone",
+    "county": "Westmeath",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.4239,
+    "longitude": -7.9378,
+    "type": "marina",
+    "berths": 80,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Banagher Marina",
+    "address": "Shannon Harbour, Banagher",
+    "county": "Offaly",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.1903,
+    "longitude": -7.985,
+    "type": "marina",
+    "berths": 50,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Terryglass Marina",
+    "address": "Terryglass, Tipperary",
+    "county": "Tipperary",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 52.9833,
+    "longitude": -8.2167,
+    "type": "marina",
+    "berths": 60,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Tory Island Harbour",
+    "address": "West Town, Tory Island",
+    "county": "Donegal",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 55.2633,
+    "longitude": -8.225969,
+    "type": "pier",
+    "berths": 8,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Warrenpoint Port",
+    "address": "Dock Street, Warrenpoint",
+    "county": "Down",
+    "region": "North Coast",
+    "country": "Ireland",
+    "latitude": 54.1031,
+    "longitude": -6.2528,
+    "type": "marina",
+    "berths": 25,
+    "maxDepth": 8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Kilkeel Harbour",
+    "address": "Harbour Road, Kilkeel",
+    "county": "Down",
+    "region": "North Coast",
+    "country": "Ireland",
+    "latitude": 54.0631,
+    "longitude": -5.9969,
+    "type": "pier",
+    "berths": 40,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Portavogie Harbour",
+    "address": "Harbour Road, Portavogie",
+    "county": "Down",
+    "region": "North Coast",
+    "country": "Ireland",
+    "latitude": 54.4667,
+    "longitude": -5.4333,
+    "type": "pier",
+    "berths": 35,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Enniskillen Henry Street Jetties",
+    "address": "Henry Street, Enniskillen",
+    "county": "Fermanagh",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.3462,
+    "longitude": -7.6413,
+    "type": "jetty",
+    "berths": 30,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Carrybridge Marina",
+    "address": "Carrybridge, Fermanagh",
+    "county": "Fermanagh",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.4233,
+    "longitude": -7.7108,
+    "type": "jetty",
+    "berths": 40,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Castle Archdale Jetty",
+    "address": "Castle Archdale, Fermanagh",
+    "county": "Fermanagh",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.4897,
+    "longitude": -7.8461,
+    "type": "jetty",
+    "berths": 20,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Trory Jetty",
+    "address": "Trory, Enniskillen",
+    "county": "Fermanagh",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.3725,
+    "longitude": -7.6847,
+    "type": "jetty",
+    "berths": 15,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Belturbet Jetties",
+    "address": "Belturbet, Cavan",
+    "county": "Cavan",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.1064,
+    "longitude": -7.4508,
+    "type": "jetty",
+    "berths": 35,
+    "maxDepth": 2.2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Knockninny Jetty",
+    "address": "Knockninny, Fermanagh",
+    "county": "Fermanagh",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.4647,
+    "longitude": -7.8203,
+    "type": "jetty",
+    "berths": 10,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Portumna Harbour Jetties",
+    "address": "Portumna, Galway",
+    "county": "Galway",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.0886,
+    "longitude": -8.2183,
+    "type": "jetty",
+    "berths": 50,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Killaloe Jetties",
+    "address": "Killaloe, Clare",
+    "county": "Clare",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 52.8086,
+    "longitude": -8.4481,
+    "type": "jetty",
+    "berths": 45,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Dromod Harbour Jetty",
+    "address": "Dromod, Leitrim",
+    "county": "Leitrim",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.9172,
+    "longitude": -7.9669,
+    "type": "jetty",
+    "berths": 20,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Mountshannon Jetties",
+    "address": "Mountshannon, Clare",
+    "county": "Clare",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 52.9275,
+    "longitude": -8.4361,
+    "type": "jetty",
+    "berths": 25,
+    "maxDepth": 2.2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Leitrim Village Jetty",
+    "address": "Leitrim Village, Leitrim",
+    "county": "Leitrim",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 54.0475,
+    "longitude": -7.9008,
+    "type": "jetty",
+    "berths": 15,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Keshcarrigan Jetty",
+    "address": "Keshcarrigan, Leitrim",
+    "county": "Leitrim",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 54.0631,
+    "longitude": -7.8419,
+    "type": "jetty",
+    "berths": 12,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ballinamore Canal Jetties",
+    "address": "Ballinamore, Leitrim",
+    "county": "Leitrim",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 54.0447,
+    "longitude": -7.8067,
+    "type": "jetty",
+    "berths": 20,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ballyconnell Jetty",
+    "address": "Ballyconnell, Cavan",
+    "county": "Cavan",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.1383,
+    "longitude": -7.6058,
+    "type": "jetty",
+    "berths": 18,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Tullamore Harbour Jetty",
+    "address": "Tullamore, Offaly",
+    "county": "Offaly",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.274,
+    "longitude": -7.4897,
+    "type": "jetty",
+    "berths": 25,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Mullingar Harbour Jetty",
+    "address": "Mullingar, Westmeath",
+    "county": "Westmeath",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.5264,
+    "longitude": -7.3397,
+    "type": "jetty",
+    "berths": 30,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ballycotton Pier Jetty",
+    "address": "Ballycotton, Cork",
+    "county": "Cork",
+    "region": "South Coast",
+    "country": "Ireland",
+    "latitude": 51.8256,
+    "longitude": -7.9842,
+    "type": "jetty",
+    "berths": 15,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Courtown Pier Jetty",
+    "address": "Courtown, Wexford",
+    "county": "Wexford",
+    "region": "Southeast",
+    "country": "Ireland",
+    "latitude": 52.6447,
+    "longitude": -6.2286,
+    "type": "jetty",
+    "berths": 12,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Saltee Islands Jetty",
+    "address": "Great Saltee Island, Wexford",
+    "county": "Wexford",
+    "region": "Southeast",
+    "country": "Ireland",
+    "latitude": 52.1244,
+    "longitude": -6.6075,
+    "type": "jetty",
+    "berths": 6,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Blackwater Pier Jetty",
+    "address": "Blackwater, Cork",
+    "county": "Cork",
+    "region": "South Coast",
+    "country": "Ireland",
+    "latitude": 51.9489,
+    "longitude": -7.8506,
+    "type": "jetty",
+    "berths": 20,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Union Hall Jetty",
+    "address": "Union Hall, Cork",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.5578,
+    "longitude": -9.1372,
+    "type": "jetty",
+    "berths": 18,
+    "maxDepth": 2.2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Baltimore Outer Jetty",
+    "address": "Baltimore, Cork",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.4836,
+    "longitude": -9.3747,
+    "type": "jetty",
+    "berths": 25,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Schull Pier Jetty",
+    "address": "Schull, Cork",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.5244,
+    "longitude": -9.5481,
+    "type": "jetty",
+    "berths": 22,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Crookhaven Jetty",
+    "address": "Crookhaven, Cork",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.4692,
+    "longitude": -9.7056,
+    "type": "jetty",
+    "berths": 15,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Barley Cove Jetty",
+    "address": "Barley Cove, Cork",
+    "county": "Cork",
+    "region": "Southwest",
+    "country": "Ireland",
+    "latitude": 51.4481,
+    "longitude": -9.8147,
+    "type": "jetty",
+    "berths": 8,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Westport Quay Jetty",
+    "address": "Westport Quay, Mayo",
+    "county": "Mayo",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 53.7658,
+    "longitude": -9.5269,
+    "type": "jetty",
+    "berths": 30,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Belmullet Pier Jetty",
+    "address": "Belmullet, Mayo",
+    "county": "Mayo",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 54.2269,
+    "longitude": -9.9856,
+    "type": "jetty",
+    "berths": 20,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ballina Jetty",
+    "address": "Ballina, Mayo",
+    "county": "Mayo",
+    "region": "West Coast",
+    "country": "Ireland",
+    "latitude": 54.1144,
+    "longitude": -9.1547,
+    "type": "jetty",
+    "berths": 25,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Mullaghmore Jetty",
+    "address": "Mullaghmore, Sligo",
+    "county": "Sligo",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.4647,
+    "longitude": -8.4514,
+    "type": "jetty",
+    "berths": 15,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Strandhill Jetty",
+    "address": "Strandhill, Sligo",
+    "county": "Sligo",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.2717,
+    "longitude": -8.6014,
+    "type": "jetty",
+    "berths": 10,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Portsmouth Harbour",
+    "address": "Gunwharf Road, Portsmouth",
+    "county": "Hampshire",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 50.7951,
+    "longitude": -1.1089,
+    "type": "marina",
+    "berths": 180,
+    "maxDepth": 4.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Dover Marina",
+    "address": "Granville Dock, Dover",
+    "county": "Kent",
+    "region": "Southeast England",
+    "country": "Ireland",
+    "latitude": 51.1289,
+    "longitude": 1.3186,
+    "type": "marina",
+    "berths": 350,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Weymouth Marina",
+    "address": "Commercial Road, Weymouth",
+    "county": "Dorset",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.6083,
+    "longitude": -2.45,
+    "type": "marina",
+    "berths": 520,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Plymouth Mayflower Marina",
+    "address": "Richmond Walk, Plymouth",
+    "county": "Devon",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.3669,
+    "longitude": -4.1381,
+    "type": "marina",
+    "berths": 420,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Poole Quay Boat Haven",
+    "address": "Town Quay, Poole",
+    "county": "Dorset",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.7194,
+    "longitude": -1.9872,
+    "type": "marina",
+    "berths": 140,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Falmouth Marina",
+    "address": "North Parade, Falmouth",
+    "county": "Cornwall",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.1508,
+    "longitude": -5.0642,
+    "type": "marina",
+    "berths": 400,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Dartmouth Marina",
+    "address": "Mill Creek, Dartmouth",
+    "county": "Devon",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.3508,
+    "longitude": -3.5772,
+    "type": "marina",
+    "berths": 320,
+    "maxDepth": 3.2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Salcombe Harbour",
+    "address": "The Quay, Salcombe",
+    "county": "Devon",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.2386,
+    "longitude": -3.7694,
+    "type": "pier",
+    "berths": 150,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Padstow Harbour",
+    "address": "The Harbour, Padstow",
+    "county": "Cornwall",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.5417,
+    "longitude": -4.9375,
+    "type": "pier",
+    "berths": 80,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "St Ives Harbour",
+    "address": "The Wharf, St Ives",
+    "county": "Cornwall",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.2142,
+    "longitude": -5.4839,
+    "type": "pier",
+    "berths": 60,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Newlyn Harbour",
+    "address": "The Strand, Newlyn",
+    "county": "Cornwall",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.1028,
+    "longitude": -5.5428,
+    "type": "pier",
+    "berths": 200,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Fowey Harbour",
+    "address": "Town Quay, Fowey",
+    "county": "Cornwall",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.3358,
+    "longitude": -4.6361,
+    "type": "pier",
+    "berths": 120,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Brixham Harbour",
+    "address": "The Strand, Brixham",
+    "county": "Devon",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.3944,
+    "longitude": -3.515,
+    "type": "pier",
+    "berths": 180,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ilfracombe Harbour",
+    "address": "The Quay, Ilfracombe",
+    "county": "Devon",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 51.2089,
+    "longitude": -4.1197,
+    "type": "pier",
+    "berths": 90,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Exmouth Marina",
+    "address": "The Strand, Exmouth",
+    "county": "Devon",
+    "region": "Southwest England",
+    "country": "Ireland",
+    "latitude": 50.6186,
+    "longitude": -3.4133,
+    "type": "marina",
+    "berths": 250,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Lowestoft Marina",
+    "address": "Hamilton Dock, Lowestoft",
+    "county": "Suffolk",
+    "region": "East England",
+    "country": "Ireland",
+    "latitude": 52.4669,
+    "longitude": 1.7331,
+    "type": "marina",
+    "berths": 380,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Wells-next-the-Sea Harbour",
+    "address": "Beach Road, Wells-next-the-Sea",
+    "county": "Norfolk",
+    "region": "East England",
+    "country": "Ireland",
+    "latitude": 52.9667,
+    "longitude": 0.85,
+    "type": "pier",
+    "berths": 120,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Yarmouth Marina",
+    "address": "South Quay, Great Yarmouth",
+    "county": "Norfolk",
+    "region": "East England",
+    "country": "Ireland",
+    "latitude": 52.6083,
+    "longitude": 1.7297,
+    "type": "marina",
+    "berths": 200,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Harwich Harbour",
+    "address": "The Quay, Harwich",
+    "county": "Essex",
+    "region": "East England",
+    "country": "Ireland",
+    "latitude": 51.9469,
+    "longitude": 1.2856,
+    "type": "pier",
+    "berths": 160,
+    "maxDepth": 4.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Burnham-on-Crouch Marina",
+    "address": "The Quay, Burnham-on-Crouch",
+    "county": "Essex",
+    "region": "East England",
+    "country": "Ireland",
+    "latitude": 51.6297,
+    "longitude": 0.8136,
+    "type": "marina",
+    "berths": 340,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ipswich Marina",
+    "address": "New Cut East, Ipswich",
+    "county": "Suffolk",
+    "region": "East England",
+    "country": "Ireland",
+    "latitude": 52.0497,
+    "longitude": 1.1631,
+    "type": "marina",
+    "berths": 290,
+    "maxDepth": 3.2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Whitby Marina",
+    "address": "Langborne Road, Whitby",
+    "county": "North Yorkshire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 54.4858,
+    "longitude": -0.6153,
+    "type": "marina",
+    "berths": 240,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Scarborough Harbour",
+    "address": "Sandside, Scarborough",
+    "county": "North Yorkshire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 54.2767,
+    "longitude": -0.3953,
+    "type": "pier",
+    "berths": 180,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Bridlington Harbour",
+    "address": "Harbour Road, Bridlington",
+    "county": "East Yorkshire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 54.0844,
+    "longitude": -0.1933,
+    "type": "pier",
+    "berths": 150,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Hull Marina",
+    "address": "Hull Marina, Hull",
+    "county": "East Yorkshire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 53.7422,
+    "longitude": -0.3392,
+    "type": "marina",
+    "berths": 270,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Grimsby Marina",
+    "address": "Lock Hill, Grimsby",
+    "county": "Lincolnshire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 53.5681,
+    "longitude": -0.0847,
+    "type": "marina",
+    "berths": 200,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Boston Marina",
+    "address": "Witham Way, Boston",
+    "county": "Lincolnshire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 52.9781,
+    "longitude": -0.0261,
+    "type": "marina",
+    "berths": 120,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Inveraray Harbour",
+    "address": "Front Street, Inveraray",
+    "county": "Argyll",
+    "region": "Scotland West",
+    "country": "Ireland",
+    "latitude": 56.2331,
+    "longitude": -5.0708,
+    "type": "pier",
+    "berths": 40,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Tarbert Harbour",
+    "address": "Harbour Street, Tarbert",
+    "county": "Argyll",
+    "region": "Scotland West",
+    "country": "Ireland",
+    "latitude": 55.8669,
+    "longitude": -5.4331,
+    "type": "pier",
+    "berths": 80,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Campbeltown Harbour",
+    "address": "Old Quay Head, Campbeltown",
+    "county": "Argyll",
+    "region": "Scotland West",
+    "country": "Ireland",
+    "latitude": 55.4261,
+    "longitude": -5.6058,
+    "type": "pier",
+    "berths": 120,
+    "maxDepth": 5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Largs Marina",
+    "address": "Irvine Road, Largs",
+    "county": "North Ayrshire",
+    "region": "Scotland West",
+    "country": "Ireland",
+    "latitude": 55.7942,
+    "longitude": -4.8669,
+    "type": "marina",
+    "berths": 750,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Rothesay Harbour",
+    "address": "The Esplanade, Rothesay",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 55.8367,
+    "longitude": -5.0581,
+    "type": "pier",
+    "berths": 100,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Brodick Harbour",
+    "address": "Shore Road, Brodick",
+    "county": "North Ayrshire",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 55.5825,
+    "longitude": -5.1456,
+    "type": "pier",
+    "berths": 60,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Millport Harbour",
+    "address": "Millport Pier, Cumbrae",
+    "county": "North Ayrshire",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 55.7547,
+    "longitude": -4.9286,
+    "type": "pier",
+    "berths": 45,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Mallaig Harbour",
+    "address": "Station Road, Mallaig",
+    "county": "Highland",
+    "region": "Scotland West",
+    "country": "Ireland",
+    "latitude": 57.0061,
+    "longitude": -5.8292,
+    "type": "pier",
+    "berths": 140,
+    "maxDepth": 6,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Kyle of Lochalsh Harbour",
+    "address": "Station Road, Kyle of Lochalsh",
+    "county": "Highland",
+    "region": "Scotland West",
+    "country": "Ireland",
+    "latitude": 57.2781,
+    "longitude": -5.7125,
+    "type": "pier",
+    "berths": 80,
+    "maxDepth": 4.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Portree Harbour",
+    "address": "Quay Brae, Portree",
+    "county": "Highland",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 57.4131,
+    "longitude": -6.1947,
+    "type": "pier",
+    "berths": 50,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Uig Harbour",
+    "address": "Ferry Road, Uig",
+    "county": "Highland",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 57.5825,
+    "longitude": -6.3708,
+    "type": "pier",
+    "berths": 35,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Armadale Harbour",
+    "address": "Ferry Pier, Armadale",
+    "county": "Highland",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 57.0706,
+    "longitude": -5.8983,
+    "type": "pier",
+    "berths": 30,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Stornoway Harbour",
+    "address": "Esplanade, Stornoway",
+    "county": "Western Isles",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 58.2094,
+    "longitude": -6.3889,
+    "type": "marina",
+    "berths": 120,
+    "maxDepth": 5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Castlebay Harbour",
+    "address": "Main Street, Castlebay",
+    "county": "Western Isles",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 56.9583,
+    "longitude": -7.4869,
+    "type": "pier",
+    "berths": 40,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Lochmaddy Harbour",
+    "address": "Ferry Terminal, Lochmaddy",
+    "county": "Western Isles",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 57.5986,
+    "longitude": -7.1606,
+    "type": "pier",
+    "berths": 35,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Lerwick Harbour",
+    "address": "Alexandra Wharf, Lerwick",
+    "county": "Shetland",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 60.1542,
+    "longitude": -1.1453,
+    "type": "marina",
+    "berths": 150,
+    "maxDepth": 8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Kirkwall Harbour",
+    "address": "Ayre Road, Kirkwall",
+    "county": "Orkney",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 58.9828,
+    "longitude": -2.9606,
+    "type": "pier",
+    "berths": 80,
+    "maxDepth": 6,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Stromness Harbour",
+    "address": "Victoria Street, Stromness",
+    "county": "Orkney",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 58.9581,
+    "longitude": -3.2981,
+    "type": "pier",
+    "berths": 60,
+    "maxDepth": 5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Aberdeen Marina",
+    "address": "Pocra Quay, Aberdeen",
+    "county": "Aberdeenshire",
+    "region": "Scotland East",
+    "country": "Ireland",
+    "latitude": 57.1436,
+    "longitude": -2.0803,
+    "type": "marina",
+    "berths": 300,
+    "maxDepth": 4.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Peterhead Harbour",
+    "address": "Harbour Street, Peterhead",
+    "county": "Aberdeenshire",
+    "region": "Scotland East",
+    "country": "Ireland",
+    "latitude": 57.5042,
+    "longitude": -1.7847,
+    "type": "pier",
+    "berths": 200,
+    "maxDepth": 6,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Fraserburgh Harbour",
+    "address": "Shore Street, Fraserburgh",
+    "county": "Aberdeenshire",
+    "region": "Scotland East",
+    "country": "Ireland",
+    "latitude": 57.6969,
+    "longitude": -2.0031,
+    "type": "pier",
+    "berths": 180,
+    "maxDepth": 5.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Milford Haven Marina",
+    "address": "Cleddau Bridge, Milford Haven",
+    "county": "Pembrokeshire",
+    "region": "West Wales",
+    "country": "Ireland",
+    "latitude": 51.7108,
+    "longitude": -5.0439,
+    "type": "marina",
+    "berths": 230,
+    "maxDepth": 5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Tenby Harbour",
+    "address": "Castle Hill, Tenby",
+    "county": "Pembrokeshire",
+    "region": "West Wales",
+    "country": "Ireland",
+    "latitude": 51.6722,
+    "longitude": -4.7003,
+    "type": "pier",
+    "berths": 80,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Fishguard Harbour",
+    "address": "Goodwick, Fishguard",
+    "county": "Pembrokeshire",
+    "region": "West Wales",
+    "country": "Ireland",
+    "latitude": 52.0106,
+    "longitude": -4.9753,
+    "type": "pier",
+    "berths": 100,
+    "maxDepth": 8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Aberaeron Harbour",
+    "address": "Quay Parade, Aberaeron",
+    "county": "Ceredigion",
+    "region": "West Wales",
+    "country": "Ireland",
+    "latitude": 52.2406,
+    "longitude": -4.2619,
+    "type": "pier",
+    "berths": 60,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Barmouth Harbour",
+    "address": "The Quay, Barmouth",
+    "county": "Gwynedd",
+    "region": "West Wales",
+    "country": "Ireland",
+    "latitude": 52.7208,
+    "longitude": -4.0503,
+    "type": "pier",
+    "berths": 70,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Pwllheli Marina",
+    "address": "South Beach, Pwllheli",
+    "county": "Gwynedd",
+    "region": "West Wales",
+    "country": "Ireland",
+    "latitude": 52.8831,
+    "longitude": -4.4169,
+    "type": "marina",
+    "berths": 400,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Caernarfon Harbour",
+    "address": "Slate Quay, Caernarfon",
+    "county": "Gwynedd",
+    "region": "North Wales",
+    "country": "Ireland",
+    "latitude": 53.1394,
+    "longitude": -4.2714,
+    "type": "pier",
+    "berths": 90,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Beaumaris Harbour",
+    "address": "Green Edge, Beaumaris",
+    "county": "Anglesey",
+    "region": "North Wales",
+    "country": "Ireland",
+    "latitude": 53.2633,
+    "longitude": -4.0917,
+    "type": "pier",
+    "berths": 50,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Cowes Marina",
+    "address": "Medina Road, Cowes",
+    "county": "Isle of Wight",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 50.7631,
+    "longitude": -1.2981,
+    "type": "marina",
+    "berths": 370,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Yarmouth Harbour",
+    "address": "The Quay, Yarmouth",
+    "county": "Isle of Wight",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 50.7058,
+    "longitude": -1.4981,
+    "type": "pier",
+    "berths": 180,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Bembridge Marina",
+    "address": "Embankment Road, Bembridge",
+    "county": "Isle of Wight",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 50.6819,
+    "longitude": -1.0878,
+    "type": "marina",
+    "berths": 280,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ryde Harbour",
+    "address": "The Esplanade, Ryde",
+    "county": "Isle of Wight",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 50.7294,
+    "longitude": -1.1606,
+    "type": "pier",
+    "berths": 120,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Douglas Harbour",
+    "address": "Loch Promenade, Douglas",
+    "county": "Isle of Man",
+    "region": "Isle of Man",
+    "country": "Ireland",
+    "latitude": 54.15,
+    "longitude": -4.4775,
+    "type": "marina",
+    "berths": 120,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Peel Harbour",
+    "address": "West Quay, Peel",
+    "county": "Isle of Man",
+    "region": "Isle of Man",
+    "country": "Ireland",
+    "latitude": 54.2275,
+    "longitude": -4.6978,
+    "type": "pier",
+    "berths": 80,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Castletown Harbour",
+    "address": "Harbour Walk, Castletown",
+    "county": "Isle of Man",
+    "region": "Isle of Man",
+    "country": "Ireland",
+    "latitude": 54.0747,
+    "longitude": -4.6539,
+    "type": "pier",
+    "berths": 60,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ramsey Harbour",
+    "address": "Parliament Street, Ramsey",
+    "county": "Isle of Man",
+    "region": "Isle of Man",
+    "country": "Ireland",
+    "latitude": 54.3214,
+    "longitude": -4.3839,
+    "type": "pier",
+    "berths": 70,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Port St Mary Harbour",
+    "address": "Bay View Road, Port St Mary",
+    "county": "Isle of Man",
+    "region": "Isle of Man",
+    "country": "Ireland",
+    "latitude": 54.0694,
+    "longitude": -4.7333,
+    "type": "pier",
+    "berths": 45,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ullapool Harbour",
+    "address": "Shore Street, Ullapool",
+    "county": "Highland",
+    "region": "Scotland North",
+    "country": "Ireland",
+    "latitude": 57.8953,
+    "longitude": -5.1608,
+    "type": "pier",
+    "berths": 100,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Gairloch Harbour",
+    "address": "Pier Road, Gairloch",
+    "county": "Highland",
+    "region": "Scotland North",
+    "country": "Ireland",
+    "latitude": 57.7128,
+    "longitude": -5.6908,
+    "type": "pier",
+    "berths": 40,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Scrabster Harbour",
+    "address": "Harbour Road, Scrabster",
+    "county": "Highland",
+    "region": "Scotland North",
+    "country": "Ireland",
+    "latitude": 58.6089,
+    "longitude": -3.5439,
+    "type": "pier",
+    "berths": 80,
+    "maxDepth": 6,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Port Ellen Harbour",
+    "address": "Port Ellen, Islay",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 55.6278,
+    "longitude": -6.1889,
+    "type": "pier",
+    "berths": 60,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Port Askaig Harbour",
+    "address": "Port Askaig, Islay",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 55.8389,
+    "longitude": -6.1053,
+    "type": "pier",
+    "berths": 40,
+    "maxDepth": 5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Bowmore Harbour",
+    "address": "Shore Street, Bowmore",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 55.7567,
+    "longitude": -6.2881,
+    "type": "pier",
+    "berths": 25,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Craighouse Harbour",
+    "address": "Craighouse, Jura",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 55.8311,
+    "longitude": -5.9508,
+    "type": "pier",
+    "berths": 20,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Colonsay Harbour",
+    "address": "Scalasaig, Colonsay",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 56.0575,
+    "longitude": -6.1831,
+    "type": "pier",
+    "berths": 15,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Tobermory Harbour",
+    "address": "Main Street, Tobermory",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 56.6231,
+    "longitude": -6.0669,
+    "type": "pier",
+    "berths": 80,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Craignure Harbour",
+    "address": "Craignure, Mull",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 56.4731,
+    "longitude": -5.7053,
+    "type": "pier",
+    "berths": 50,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Iona Jetty",
+    "address": "Baile Mor, Iona",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 56.3331,
+    "longitude": -6.4108,
+    "type": "jetty",
+    "berths": 12,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Fionnphort Harbour",
+    "address": "Fionnphort, Mull",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 56.3256,
+    "longitude": -6.3731,
+    "type": "pier",
+    "berths": 30,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Scarinish Harbour",
+    "address": "Scarinish, Tiree",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 56.5003,
+    "longitude": -6.8731,
+    "type": "pier",
+    "berths": 25,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Arinagour Harbour",
+    "address": "Arinagour, Coll",
+    "county": "Argyll and Bute",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 56.6178,
+    "longitude": -6.5531,
+    "type": "pier",
+    "berths": 20,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Kinloch Harbour",
+    "address": "Kinloch, Rum",
+    "county": "Highland",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 57.0089,
+    "longitude": -6.2839,
+    "type": "pier",
+    "berths": 15,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Galmisdale Harbour",
+    "address": "Galmisdale, Eigg",
+    "county": "Highland",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 56.9053,
+    "longitude": -6.1469,
+    "type": "pier",
+    "berths": 12,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Port Mor Harbour",
+    "address": "Port Mor, Muck",
+    "county": "Highland",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 56.8383,
+    "longitude": -6.2331,
+    "type": "jetty",
+    "berths": 8,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Canna Harbour",
+    "address": "Canna Harbour, Canna",
+    "county": "Highland",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 57.0531,
+    "longitude": -6.4889,
+    "type": "pier",
+    "berths": 10,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Tarbert Harris Harbour",
+    "address": "Pier Road, Tarbert",
+    "county": "Western Isles",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 57.8981,
+    "longitude": -6.8069,
+    "type": "pier",
+    "berths": 50,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Leverburgh Harbour",
+    "address": "Ferry Terminal, Leverburgh",
+    "county": "Western Isles",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 57.7769,
+    "longitude": -7.0331,
+    "type": "pier",
+    "berths": 35,
+    "maxDepth": 3.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Lochboisdale Harbour",
+    "address": "Pier Road, Lochboisdale",
+    "county": "Western Isles",
+    "region": "Scotland Islands",
+    "country": "Ireland",
+    "latitude": 57.1331,
+    "longitude": -7.3089,
+    "type": "pier",
+    "berths": 40,
+    "maxDepth": 4.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "St Helier Marina",
+    "address": "South Pier, St Helier",
+    "county": "Jersey",
+    "region": "Channel Islands",
+    "country": "Ireland",
+    "latitude": 49.1831,
+    "longitude": -2.1069,
+    "type": "marina",
+    "berths": 800,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "St Peter Port Marina",
+    "address": "North Beach, St Peter Port",
+    "county": "Guernsey",
+    "region": "Channel Islands",
+    "country": "Ireland",
+    "latitude": 49.4581,
+    "longitude": -2.5331,
+    "type": "marina",
+    "berths": 340,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Alderney Harbour",
+    "address": "Braye Harbour, Alderney",
+    "county": "Alderney",
+    "region": "Channel Islands",
+    "country": "Ireland",
+    "latitude": 49.7269,
+    "longitude": -2.2031,
+    "type": "pier",
+    "berths": 120,
+    "maxDepth": 2.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Sark Harbour",
+    "address": "Maseline Harbour, Sark",
+    "county": "Sark",
+    "region": "Channel Islands",
+    "country": "Ireland",
+    "latitude": 49.4269,
+    "longitude": -2.3631,
+    "type": "jetty",
+    "berths": 30,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Thames Barrier Marina",
+    "address": "Eastmoor Street, Charlton",
+    "county": "Greater London",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 51.4847,
+    "longitude": 0.0169,
+    "type": "marina",
+    "berths": 200,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Henley-on-Thames Marina",
+    "address": "Mill Lane, Henley-on-Thames",
+    "county": "Oxfordshire",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 51.5369,
+    "longitude": -0.8978,
+    "type": "marina",
+    "berths": 150,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Marlow Marina",
+    "address": "Marlow Lock, Marlow",
+    "county": "Buckinghamshire",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 51.5714,
+    "longitude": -0.7756,
+    "type": "marina",
+    "berths": 100,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Oxford Marina",
+    "address": "Hythe Bridge Street, Oxford",
+    "county": "Oxfordshire",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 51.7539,
+    "longitude": -1.2636,
+    "type": "marina",
+    "berths": 80,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Reading Marina",
+    "address": "Kennet Side, Reading",
+    "county": "Berkshire",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 51.4578,
+    "longitude": -0.9647,
+    "type": "marina",
+    "berths": 120,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Little Venice Marina",
+    "address": "Blomfield Road, London",
+    "county": "Greater London",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 51.5236,
+    "longitude": -0.1831,
+    "type": "marina",
+    "berths": 60,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Paddington Basin Marina",
+    "address": "Sheldon Square, Paddington",
+    "county": "Greater London",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 51.5186,
+    "longitude": -0.1775,
+    "type": "marina",
+    "berths": 50,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Limehouse Marina",
+    "address": "Limehouse Basin, London",
+    "county": "Greater London",
+    "region": "South England",
+    "country": "Ireland",
+    "latitude": 51.5117,
+    "longitude": -0.0381,
+    "type": "marina",
+    "berths": 90,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Braunston Marina",
+    "address": "Braunston, Daventry",
+    "county": "Northamptonshire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 52.3028,
+    "longitude": -1.2036,
+    "type": "marina",
+    "berths": 280,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Napton Marina",
+    "address": "Napton-on-the-Hill, Southam",
+    "county": "Warwickshire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 52.2564,
+    "longitude": -1.3147,
+    "type": "marina",
+    "berths": 200,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Gas Street Basin",
+    "address": "Gas Street, Birmingham",
+    "county": "West Midlands",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 52.4781,
+    "longitude": -1.9106,
+    "type": "marina",
+    "berths": 40,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Alvechurch Marina",
+    "address": "Scarfield Hill, Alvechurch",
+    "county": "Worcestershire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 52.3564,
+    "longitude": -1.9681,
+    "type": "marina",
+    "berths": 400,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Tardebigge Marina",
+    "address": "Tardebigge, Bromsgrove",
+    "county": "Worcestershire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 52.3306,
+    "longitude": -2.0308,
+    "type": "marina",
+    "berths": 150,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Burnley Marina",
+    "address": "Finsley Gate, Burnley",
+    "county": "Lancashire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 53.7881,
+    "longitude": -2.2547,
+    "type": "marina",
+    "berths": 100,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Skipton Marina",
+    "address": "Coach Street, Skipton",
+    "county": "North Yorkshire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 53.9622,
+    "longitude": -2.0169,
+    "type": "marina",
+    "berths": 80,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Apperley Bridge Marina",
+    "address": "Apperley Lane, Bradford",
+    "county": "West Yorkshire",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 53.8542,
+    "longitude": -1.7847,
+    "type": "marina",
+    "berths": 120,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Grangemouth Marina",
+    "address": "Grangemouth Docks, Grangemouth",
+    "county": "Falkirk",
+    "region": "Scotland East",
+    "country": "Ireland",
+    "latitude": 56.0075,
+    "longitude": -3.7169,
+    "type": "marina",
+    "berths": 120,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Kirkintilloch Marina",
+    "address": "Townhead, Kirkintilloch",
+    "county": "East Dunbartonshire",
+    "region": "Scotland West",
+    "country": "Ireland",
+    "latitude": 55.9406,
+    "longitude": -4.1547,
+    "type": "marina",
+    "berths": 80,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Falkirk Marina",
+    "address": "The Helix, Falkirk",
+    "county": "Falkirk",
+    "region": "Scotland East",
+    "country": "Ireland",
+    "latitude": 56.0014,
+    "longitude": -3.7781,
+    "type": "marina",
+    "berths": 100,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Great Yarmouth Marina",
+    "address": "Bure Marina, Great Yarmouth",
+    "county": "Norfolk",
+    "region": "East England",
+    "country": "Ireland",
+    "latitude": 52.6089,
+    "longitude": 1.7294,
+    "type": "marina",
+    "berths": 200,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Wroxham Marina",
+    "address": "The Bridge, Wroxham",
+    "county": "Norfolk",
+    "region": "East England",
+    "country": "Ireland",
+    "latitude": 52.7064,
+    "longitude": 1.4178,
+    "type": "marina",
+    "berths": 150,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Stalham Marina",
+    "address": "High Street, Stalham",
+    "county": "Norfolk",
+    "region": "East England",
+    "country": "Ireland",
+    "latitude": 52.7658,
+    "longitude": 1.5081,
+    "type": "marina",
+    "berths": 120,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Windermere Marina",
+    "address": "Bowness-on-Windermere, Windermere",
+    "county": "Cumbria",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 54.3719,
+    "longitude": -2.9169,
+    "type": "marina",
+    "berths": 200,
+    "maxDepth": 4,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Coniston Marina",
+    "address": "Lake Road, Coniston",
+    "county": "Cumbria",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 54.3697,
+    "longitude": -3.0781,
+    "type": "marina",
+    "berths": 80,
+    "maxDepth": 3,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Ullswater Marina",
+    "address": "Pooley Bridge, Penrith",
+    "county": "Cumbria",
+    "region": "North England",
+    "country": "Ireland",
+    "latitude": 54.6139,
+    "longitude": -2.8481,
+    "type": "marina",
+    "berths": 60,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Kesh Marina Jetty",
+    "address": "Kesh River, Kesh",
+    "county": "Fermanagh",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.52351,
+    "longitude": -7.726432,
+    "type": "jetty",
+    "berths": 25,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Castlecaldwell Jetty",
+    "address": "Castlecaldwell, Belleek",
+    "county": "Fermanagh",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.492775,
+    "longitude": -8.054706,
+    "type": "jetty",
+    "berths": 12,
+    "maxDepth": 1.8,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Castle Archdale Jetty",
+    "address": "Castle Archdale Country Park, Lough Erne",
+    "county": "Fermanagh",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.480034,
+    "longitude": -7.7345896,
+    "type": "jetty",
+    "berths": 15,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Inish Davar Island Jetty",
+    "address": "Inish Davar Island, Lough Erne",
+    "county": "Fermanagh",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.443127,
+    "longitude": -7.7283125,
+    "type": "jetty",
+    "berths": 8,
+    "maxDepth": 1.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Erne Marine Bellanaleck",
+    "address": "Bellanaleck Quay, Enniskillen",
+    "county": "Fermanagh",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.345,
+    "longitude": -7.642,
+    "type": "marina",
+    "berths": 100,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Carrybridge Marina",
+    "address": "Carrybridge, Lisbellaw",
+    "county": "Fermanagh",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.365,
+    "longitude": -7.689,
+    "type": "marina",
+    "berths": 100,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Shannon Harbour",
+    "address": "Shannon Harbour, Birr",
+    "county": "Offaly",
+    "region": "Mid-West",
+    "country": "Ireland",
+    "latitude": 53.152,
+    "longitude": -7.921,
+    "type": "harbour",
+    "berths": 25,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Athlone Marina",
+    "address": "Athlone, River Shannon",
+    "county": "Westmeath",
+    "region": "Mid-West",
+    "country": "Ireland",
+    "latitude": 53.4239,
+    "longitude": -7.9407,
+    "type": "marina",
+    "berths": 40,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Carrick-on-Shannon Marina",
+    "address": "Carrick-on-Shannon",
+    "county": "Leitrim",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 53.9449,
+    "longitude": -8.0862,
+    "type": "marina",
+    "berths": 60,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Banagher Marina",
+    "address": "Banagher, River Shannon",
+    "county": "Offaly",
+    "region": "Mid-West",
+    "country": "Ireland",
+    "latitude": 53.1876,
+    "longitude": -7.9867,
+    "type": "marina",
+    "berths": 50,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Killaloe Marina",
+    "address": "Killaloe, River Shannon",
+    "county": "Clare",
+    "region": "Mid-West",
+    "country": "Ireland",
+    "latitude": 52.8108,
+    "longitude": -8.4361,
+    "type": "marina",
+    "berths": 80,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Portumna Marina",
+    "address": "Portumna, Lough Derg",
+    "county": "Galway",
+    "region": "West",
+    "country": "Ireland",
+    "latitude": 53.0918,
+    "longitude": -8.2171,
+    "type": "marina",
+    "berths": 35,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Dromineer Marina",
+    "address": "Dromineer, Lough Derg",
+    "county": "Tipperary",
+    "region": "Mid-West",
+    "country": "Ireland",
+    "latitude": 52.985,
+    "longitude": -8.25,
+    "type": "marina",
+    "berths": 120,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Terryglass Harbour",
+    "address": "Terryglass, Lough Derg",
+    "county": "Tipperary",
+    "region": "Mid-West",
+    "country": "Ireland",
+    "latitude": 52.965,
+    "longitude": -8.22,
+    "type": "harbour",
+    "berths": 20,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Lanesborough Marina",
+    "address": "Lanesborough, Lough Ree",
+    "county": "Longford",
+    "region": "Mid-West",
+    "country": "Ireland",
+    "latitude": 53.727,
+    "longitude": -7.967,
+    "type": "marina",
+    "berths": 30,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Glasson Marina",
+    "address": "Glasson, Lough Ree",
+    "county": "Westmeath",
+    "region": "Mid-West",
+    "country": "Ireland",
+    "latitude": 53.45,
+    "longitude": -7.91,
+    "type": "marina",
+    "berths": 100,
+    "maxDepth": 2.5,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Coolbawn Quay Marina",
+    "address": "Coolbawn, Lough Derg",
+    "county": "Tipperary",
+    "region": "Mid-West",
+    "country": "Ireland",
+    "latitude": 52.92,
+    "longitude": -8.28,
+    "type": "marina",
+    "berths": 40,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Leitrim Marina",
+    "address": "Leitrim Village, Shannon-Erne",
+    "county": "Leitrim",
+    "region": "Northwest",
+    "country": "Ireland",
+    "latitude": 54.052,
+    "longitude": -7.989,
+    "type": "marina",
+    "berths": 25,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  },
+  {
+    "name": "Belturbet Marina",
+    "address": "Belturbet, Shannon-Erne",
+    "county": "Cavan",
+    "region": "Mid-West",
+    "country": "Ireland",
+    "latitude": 54.103,
+    "longitude": -7.449,
+    "type": "marina",
+    "berths": 35,
+    "maxDepth": 2,
+    "facilities": [],
+    "contact": {
+      "phone": "💰 Upgrade to Premium for contact details",
+      "email": "💰 Upgrade to Premium for contact details",
+      "website": "💰 Upgrade to Premium to access website"
+    }
+  }
+];
+        
+        // Initialize map centered on British Isles
+        const map = L.map('map').setView([54.5, -4.5], 6);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Store markers for filtering
+        const markers = [];
+        let filteredLocations = [...locations];
+        
+        // Custom icons for different location types
+        const icons = {
+            marina: L.divIcon({
+                html: '<div style="background: #0ea5e9; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+                className: 'custom-marker',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            }),
+            harbour: L.divIcon({
+                html: '<div style="background: #22d3ee; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+                className: 'custom-marker',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            }),
+            pier: L.divIcon({
+                html: '<div style="background: #f59e0b; width: 10px; height: 10px; border-radius: 50%; border: 2px solid white;"></div>',
+                className: 'custom-marker',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
+            }),
+            jetty: L.divIcon({
+                html: '<div style="background: #84cc16; width: 8px; height: 8px; border-radius: 50%; border: 2px solid white;"></div>',
+                className: 'custom-marker',
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+            }),
+            port: L.divIcon({
+                html: '<div style="background: #dc2626; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white;"></div>',
+                className: 'custom-marker',
+                iconSize: [18, 18],
+                iconAnchor: [9, 9]
+            })
+        };
+        
+        // Create popup content
+        function createPopupContent(location) {
+            const facilities = location.facilities || [];
+            const contact = location.contact || {};
+            
+            return `
+                <div class="location-popup">
+                    <div class="popup-name">${location.name}</div>
+                    <div class="popup-details">
+                        <strong>${location.address}</strong><br>
+                        ${location.county}, ${location.country}<br>
+                        <span style="color: #0ea5e9;">Berths: ${location.berths || 'N/A'}</span> | 
+                        <span style="color: #22d3ee;">Depth: ${location.maxDepth || 'N/A'}m</span>
+                    </div>
+                    ${facilities.length > 0 ? `
+                        <div class="popup-facilities">
+                            ${facilities.map(f => `<span class="facility-tag">${f}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    ${contact.phone || contact.email || contact.website ? `
+                        <div class="contact-info">
+                            ${contact.phone ? `<a href="tel:${contact.phone}" class="contact-link">📞 ${contact.phone}</a>` : ''}
+                            ${contact.email ? `<a href="mailto:${contact.email}" class="contact-link">✉️ ${contact.email}</a>` : ''}
+                            ${contact.website ? `<a href="${contact.website}" target="_blank" class="contact-link">🌐 Visit Website</a>` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        // Add markers to map
+        function addMarkers(locationData) {
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers.length = 0;
+            
+            locationData.forEach((location, index) => {
+                if (location.latitude && location.longitude) {
+                    const icon = icons[location.type] || icons.marina;
+                    const marker = L.marker([location.latitude, location.longitude], { icon })
+                        .bindPopup(createPopupContent(location))
+                        .addTo(map);
+                    
+                    // Add click handler to zoom to location
+                    marker.on('click', () => {
+                        map.setView([location.latitude, location.longitude], 12);
+                        selectLocationCard(index);
+                    });
+                    
+                    markers.push(marker);
+                }
+            });
+        }
+        
+        // Render locations list
+        function renderLocationsList(locationData) {
+            const listContainer = document.getElementById('locationsList');
+            listContainer.innerHTML = locationData.map((location, index) => `
+                <div class="location-card" data-index="${index}" onclick="selectLocation(${index})">
+                    <div class="location-name">${location.name}</div>
+                    <div class="location-details">
+                        ${location.address}<br>
+                        ${location.county}, ${location.country}<br>
+                        <span class="location-berths">Berths: ${location.berths || 'N/A'}</span> | 
+                        Depth: ${location.maxDepth || 'N/A'}m
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Select location and zoom to it
+        function selectLocation(index) {
+            const location = filteredLocations[index];
+            if (location && location.latitude && location.longitude) {
+                map.setView([location.latitude, location.longitude], 12);
+                markers[index]?.openPopup();
+                selectLocationCard(index);
+            }
+        }
+        
+        // Highlight selected location card
+        function selectLocationCard(index) {
+            document.querySelectorAll('.location-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            const selectedCard = document.querySelector(`[data-index="${index}"]`);
+            if (selectedCard) {
+                selectedCard.classList.add('selected');
+                selectedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+        
+        // Filter locations
+        function filterLocations() {
+            const countryFilter = document.getElementById('countryFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            
+            filteredLocations = locations.filter(location => {
+                const matchesCountry = !countryFilter || location.country === countryFilter;
+                const matchesType = !typeFilter || location.type === typeFilter;
+                return matchesCountry && matchesType;
+            });
+            
+            addMarkers(filteredLocations);
+            renderLocationsList(filteredLocations);
+            
+            // Update stats
+            document.querySelector('.stats-number').textContent = filteredLocations.length;
+        }
+        
+        // Event listeners
+        document.getElementById('countryFilter').addEventListener('change', filterLocations);
+        document.getElementById('typeFilter').addEventListener('change', filterLocations);
+        
+        // Initialize
+        addMarkers(locations);
+        renderLocationsList(locations);
+        
+        console.log('Maritime Platform Loaded:', locations.length, 'locations');
+    </script>
+</body>
+</html>
